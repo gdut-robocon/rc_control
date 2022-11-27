@@ -1,0 +1,11 @@
+string action_name
+bool updateX_enable
+bool updateY_enable
+bool updateYaw_enable
+bool calibration_enable
+bool reset_enable
+float64 updateX_data
+float64 updateY_data
+float64 updateYaw_data
+---
+bool is_success

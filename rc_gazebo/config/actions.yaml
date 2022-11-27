@@ -1,0 +1,5 @@
+actions:
+  location_action:
+    frame_id: location_action
+    angle_error: 0.00004848
+    pose_error: 0.006

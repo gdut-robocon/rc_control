@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>rc_gazebo</name>
+    <version>0.0.0</version>
+    <description>The rc_gazebo package</description>
+
+    <!-- One maintainer tag required, multiple allowed, one person per tag -->
+    <!-- Example:  -->
+    <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+    <maintainer email="myx@todo.todo">myx</maintainer>
+
+
+    <!-- One license tag required, multiple allowed, one license per tag -->
+    <!-- Commonly used license strings: -->
+    <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+    <license>BSD</license>
+
+
+    <!-- buildtool_depend: dependencies of the build process -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <!-- depend: build, export, and execution dependency -->
+    <depend>roscpp</depend>
+    <depend>roslint</depend>
+    <depend>rc_common</depend>
+
+    <depend>gazebo</depend>
+    <depend>gazebo_ros</depend>
+    <depend>gazebo_ros_control</depend>
+
+    <exec_depend>rc_description</exec_depend>
+    <exec_depend>roboticsgroup_upatras_gazebo_plugins</exec_depend>
+
+    <export>
+        <gazebo_ros_control plugin="${prefix}/rc_action_hw_sim_plugins.xml"/>
+        <gazebo_ros gazebo_model_path="${prefix}/.."/>
+    </export>
+</package>

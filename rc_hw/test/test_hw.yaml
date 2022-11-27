@@ -1,0 +1,25 @@
+rc_hw:
+  #  bus:
+  #    - can0
+  #    - can1
+  loop_frequency: 1000
+  cycle_time_error_threshold: 0.001
+  thread_priority: 95
+  actions:
+    location_action: # action names
+      serial_port: "/dev/ttyUSB0"
+
+  # Configurations of the actuators
+  #  actuators:
+  #    mit_joint_motor:
+  #      bus: can0
+  #      id: 0x001
+  #      type: cheetah
+  # Configurations of the actuators
+#  actuators:
+#    right_front_wheel_motor:
+#      bus: can0
+#      id: 0x201
+#      type: rm_3508
+#      lp_cutoff_frequency: 60
+
