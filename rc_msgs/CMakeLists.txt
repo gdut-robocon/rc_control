@@ -16,6 +16,7 @@ add_message_files(
         LpData.msg
         ActionData.msg
         ChassisCmd.msg
+        IbusData.msg
 )
 
 add_service_files(

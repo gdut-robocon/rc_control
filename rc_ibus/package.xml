@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>rc_ibus</name>
+    <version>0.0.0</version>
+    <description>The rc_ibus package</description>
+    <maintainer email="myx@todo.todo">myx</maintainer>
+    <license>BSD</license>
+
+    <!-- buildtool_depend: dependencies of the build process -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <!-- build_depend: dependencies only used in source files -->
+    <!-- depend: build, export, and execution dependency -->
+    <depend>roscpp</depend>
+    <depend>roslint</depend>
+
+    <depend>rc_common</depend>
+  
+</package>
