@@ -6,16 +6,8 @@
 #include <ros/ros.h>
 
 #include <fcntl.h> /* File control definitions */
-#include <cstring>
-#include <unistd.h>
-
-#define termios asmtermios
-#include <asm/termios.h>
-#undef termios
-
 #include <termios.h>
-
-#include <iostream>
+#include <unistd.h>
 
 extern "C" {
 extern int ioctl(int __fd, unsigned long int __request, ...) throw();
@@ -35,25 +27,35 @@ void IBus::init(const char* serial)
   if (fd == -1)
   {
     ROS_ERROR("[rt_ibus] Unable to open ibus\n");
+    return;
   }
-  struct termios2 options
+  struct termios options
   {
   };
-  tcflush(fd, TCIOFLUSH);
-  ioctl(fd, TCGETS2, &options);
-  // Even parity(8E1):
-  options.c_ispeed = B115200;
-  options.c_ospeed = B115200;
 
+  // Even parity(115200 8N1):
+  if (tcgetattr(fd, &options) != 0)
+  {
+    perror("SetupSerial 1");
+  }
+  bzero(&options, sizeof(options));
+  options.c_cflag |= CLOCAL | CREAD;
   options.c_cflag &= ~CSIZE;
+
   options.c_cflag |= CS8;
 
   options.c_cflag &= ~PARENB;
-  options.c_iflag &= ~INPCK;
 
+  cfsetispeed(&options, B115200);
+  cfsetospeed(&options, B115200);
   options.c_cflag &= ~CSTOPB;
-
-  ioctl(fd, TCSETS2, &options);
+  options.c_cc[VTIME] = 0;
+  options.c_cc[VMIN] = 0;
+  tcflush(fd, TCIFLUSH);
+  if ((tcsetattr(fd, TCSANOW, &options)) != 0)
+  {
+    perror("com set error");
+  }
   ROS_INFO_STREAM("Successful to open " << serial << " port.");
   port_ = fd;
 }
@@ -78,7 +80,6 @@ void IBus::read()
     }
     else if (n == 1)
     {
-      //      std::cout << std::hex << (int)read_byte << std::endl;
       unpack(read_byte);
     }
   }
@@ -125,11 +126,6 @@ void IBus::unpack(const uint8_t data)
         {
           i_bus_data_.ch[i] = (uint16_t)((buff_[i * 2 + 3] & 0x0F) << 8 | buff_[i * 2 + 2]);
         }
-
-        //        i_bus_data_.ch[0] = (uint16_t)((buff_[4] & 0x0F) << 8 | buff_[3]);
-        //        i_bus_data_.ch[1] = (uint16_t)((buff_[6] & 0x0F) << 8 | buff_[5]);
-        //        i_bus_data_.ch[2] = (uint16_t)((buff_[8] & 0x0F) << 8 | buff_[7]);
-        //        i_bus_data_.ch[0] = (uint16_t)((buff_[3] & 0x0F) << 8 | buff_[2]);
         is_update_ = true;
       }
       break;
