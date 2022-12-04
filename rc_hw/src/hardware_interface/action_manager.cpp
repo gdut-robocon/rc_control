@@ -6,7 +6,6 @@
 
 #include <fcntl.h> /* File control definitions */
 #include <termios.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 namespace rc_hw
@@ -17,44 +16,44 @@ ActionManager::ActionManager()
 
 ActionManager::~ActionManager()
 {
-  for (auto& item : serial_fds_)
-  {
-    close(item);
-  }
 }
 
 bool ActionManager::initAction(std::string serialPort, std::shared_ptr<serial::Serial> serial1)
 {
   char* port = (char*)serialPort.data();
-  int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
+  int fd = open(port, O_RDWR | O_NOCTTY);
   if (fd == -1)
   {
-    ROS_ERROR_STREAM("Unable to open serial of action. Action name:" << serialPort);
+    ROS_ERROR_STREAM("Unable to open serial of action. Serial port:" << serialPort);
     return false;
   }
   struct termios options
   {
   };
 
-  tcflush(fd, TCIOFLUSH);
-  // tcgetattr(fd, &options);
-  ioctl(fd, TCGETS, &options);
-  // cfsetospeed(&options, B115200);
-  // cfsetispeed(&options, B115200);
-  options.c_ispeed = B115200;
-  options.c_ospeed = B115200;
-
+  // Even parity(115200 8N1):
+  if (tcgetattr(fd, &options) != 0)
+  {
+    perror("SetupSerial 1");
+  }
+  bzero(&options, sizeof(options));
+  options.c_cflag |= CLOCAL | CREAD;
   options.c_cflag &= ~CSIZE;
+
   options.c_cflag |= CS8;
 
   options.c_cflag &= ~PARENB;
-  options.c_iflag &= ~INPCK;
 
+  cfsetispeed(&options, B115200);
+  cfsetospeed(&options, B115200);
   options.c_cflag &= ~CSTOPB;
-
-  // update configuration
-  // tcsetattr(fd, TCSANOW, &options);
-  ioctl(fd, TCSETS, &options);
+  options.c_cc[VTIME] = 0;
+  options.c_cc[VMIN] = 0;
+  tcflush(fd, TCIFLUSH);
+  if ((tcsetattr(fd, TCSANOW, &options)) != 0)
+  {
+    perror("com set error");
+  }
   serial_fds_.push_back(fd);
   ROS_INFO_STREAM("Successful to open " << serialPort << " port.");
 
