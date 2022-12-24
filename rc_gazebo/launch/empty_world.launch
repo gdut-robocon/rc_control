@@ -1,9 +1,10 @@
 <launch>
-    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, auto, hero, engineer,sentry,rmua]"/>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, auto, hero, engineer,sentry,rmua,rabbit,elephant]"/>
     <arg name="load_chassis" default="true"/>
     <arg name="load_gimbal" default="false"/>
     <arg name="load_shooter" default="false"/>
     <arg name="load_arm" default="false"/>
+    <arg name="load_action" default="true"/>
     <arg name="use_sim" default="true"/>
     <arg name="paused" default="false"/>
     <arg name="roller_type" default="simple" doc="simple or realistic"/>
@@ -12,7 +13,7 @@
 
     <param name="robot_description" command="$(find xacro)/xacro $(find rc_description)/urdf/$(arg robot_type)/$(arg robot_type).urdf.xacro
          load_chassis:=$(arg load_chassis) load_gimbal:=$(arg load_gimbal) load_shooter:=$(arg load_shooter)
-         load_arm:=$(arg load_arm)
+         load_arm:=$(arg load_arm) load_action:=$(arg load_action)
          use_sim:=true roller_type:=$(arg roller_type)
 "/>
 

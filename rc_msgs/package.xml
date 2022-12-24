@@ -22,7 +22,6 @@
     <depend>geometry_msgs</depend>
     <depend>actionlib</depend>
     <depend>actionlib_msgs</depend>
-
     <exec_depend>message_runtime</exec_depend>
 
     <!-- The export tag contains other, unspecified, tags -->
