@@ -172,88 +172,88 @@ void CanBus::read(ros::Time time)
       }
     }
     // Check MIT Cheetah motor
-    else if (frame.can_id == static_cast<unsigned int>(0x000))
-    {
-      if (data_ptr_.id2act_data_->find(frame.data[0]) != data_ptr_.id2act_data_->end())
-      {
-        ActData& act_data = data_ptr_.id2act_data_->find(frame.data[0])->second;
-        const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(act_data.type)->second;
-        if (act_data.type.find("cheetah") != std::string::npos)
-        {  // MIT Cheetah Motor
-          act_data.q_raw = (frame.data[1] << 8) | frame.data[2];
-          uint16_t qd = (frame.data[3] << 4) | (frame.data[4] >> 4);
-          uint16_t cur = ((frame.data[4] & 0xF) << 8) | frame.data[5];
-          // Multiple cycle
-          // NOTE: The raw data range is -4pi~4pi
-          if (act_data.seq != 0)  // not the first receive
-          {
-            double pos_new = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
-                             static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
-            if (pos_new - act_data.pos > 4 * M_PI)
-              act_data.q_circle--;
-            else if (pos_new - act_data.pos < -4 * M_PI)
-              act_data.q_circle++;
-          }
-          try
-          {  // Duration will be out of dual 32-bit range while motor failure
-            act_data.frequency = 1. / (frame_stamp.stamp - act_data.stamp).toSec();
-          }
-          catch (std::runtime_error& ex)
-          {
-          }
-          act_data.stamp = frame_stamp.stamp;
-          act_data.seq++;
-          act_data.pos = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
-                         static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
-          // Converter raw CAN data to position velocity and effort.
-          act_data.vel = act_coeff.act2vel * static_cast<double>(qd) + act_coeff.act2vel_offset;
-          act_data.effort = act_coeff.act2effort * static_cast<double>(cur) + act_coeff.act2effort_offset;
-          // Low pass filter
-          act_data.lp_filter->input(act_data.vel);
-          act_data.vel = act_data.lp_filter->output();
-          continue;
-        }
-      }
-    }
-    else if (data_ptr_.id2imu_data_->find(frame.can_id) != data_ptr_.id2imu_data_->end())  // Check if IMU gyro
-    {
-      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id)->second;
-      imu_data.gyro_updated = true;
-      imu_data.angular_vel[0] = (((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.angular_vel_coeff) +
-                                imu_data.angular_vel_offset[0];
-      imu_data.angular_vel[1] = (((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.angular_vel_coeff) +
-                                imu_data.angular_vel_offset[1];
-      imu_data.angular_vel[2] = (((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.angular_vel_coeff) +
-                                imu_data.angular_vel_offset[2];
-      imu_data.time_stamp = frame_stamp.stamp;
-      int16_t temp = (int16_t)((frame.data[6] << 3) | (frame.data[7] >> 5));
-      if (temp > 1023)
-        temp -= 2048;
-      imu_data.temperature = temp * imu_data.temp_coeff + imu_data.temp_offset;
-      continue;
-    }
-    else if (data_ptr_.id2imu_data_->find(frame.can_id - 1) != data_ptr_.id2imu_data_->end())  // Check if IMU accel
-    {
-      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id - 1)->second;
-      imu_data.accel_updated = true;
-      imu_data.linear_acc[0] = ((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.accel_coeff;
-      imu_data.linear_acc[1] = ((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.accel_coeff;
-      imu_data.linear_acc[2] = ((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.accel_coeff;
-      imu_data.time_stamp = frame_stamp.stamp;
-      imu_data.camera_trigger = frame.data[6] & 1;
-      imu_data.enabled_trigger = frame.data[6] & 2;
-      imu_data.imu_filter->update(frame_stamp.stamp, imu_data.linear_acc, imu_data.angular_vel, imu_data.ori,
-                                  imu_data.linear_acc_cov, imu_data.angular_vel_cov, imu_data.ori_cov,
-                                  imu_data.temperature, imu_data.camera_trigger && imu_data.enabled_trigger);
-      continue;
-    }
-    else if (data_ptr_.id2tof_data_->find(frame.can_id) != data_ptr_.id2tof_data_->end())
-    {
-      TofData& tof_data = data_ptr_.id2tof_data_->find(frame.can_id)->second;
-      tof_data.distance = ((int16_t)((frame.data[1]) << 8) | frame.data[0]);
-      tof_data.strength = ((int16_t)((frame.data[3]) << 8) | frame.data[2]);
-      continue;
-    }
+    //    else if (frame.can_id == static_cast<unsigned int>(0x000))
+    //    {
+    //      if (data_ptr_.id2act_data_->find(frame.data[0]) != data_ptr_.id2act_data_->end())
+    //      {
+    //        ActData& act_data = data_ptr_.id2act_data_->find(frame.data[0])->second;
+    //        const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(act_data.type)->second;
+    //        if (act_data.type.find("cheetah") != std::string::npos)
+    //        {  // MIT Cheetah Motor
+    //          act_data.q_raw = (frame.data[1] << 8) | frame.data[2];
+    //          uint16_t qd = (frame.data[3] << 4) | (frame.data[4] >> 4);
+    //          uint16_t cur = ((frame.data[4] & 0xF) << 8) | frame.data[5];
+    //          // Multiple cycle
+    //          // NOTE: The raw data range is -4pi~4pi
+    //          if (act_data.seq != 0)  // not the first receive
+    //          {
+    //            double pos_new = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
+    //                             static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
+    //            if (pos_new - act_data.pos > 4 * M_PI)
+    //              act_data.q_circle--;
+    //            else if (pos_new - act_data.pos < -4 * M_PI)
+    //              act_data.q_circle++;
+    //          }
+    //          try
+    //          {  // Duration will be out of dual 32-bit range while motor failure
+    //            act_data.frequency = 1. / (frame_stamp.stamp - act_data.stamp).toSec();
+    //          }
+    //          catch (std::runtime_error& ex)
+    //          {
+    //          }
+    //          act_data.stamp = frame_stamp.stamp;
+    //          act_data.seq++;
+    //          act_data.pos = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
+    //                         static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
+    //          // Converter raw CAN data to position velocity and effort.
+    //          act_data.vel = act_coeff.act2vel * static_cast<double>(qd) + act_coeff.act2vel_offset;
+    //          act_data.effort = act_coeff.act2effort * static_cast<double>(cur) + act_coeff.act2effort_offset;
+    //          // Low pass filter
+    //          act_data.lp_filter->input(act_data.vel);
+    //          act_data.vel = act_data.lp_filter->output();
+    //          continue;
+    //        }
+    //      }
+    //    }
+    //    else if (data_ptr_.id2imu_data_->find(frame.can_id) != data_ptr_.id2imu_data_->end())  // Check if IMU gyro
+    //    {
+    //      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id)->second;
+    //      imu_data.gyro_updated = true;
+    //      imu_data.angular_vel[0] = (((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.angular_vel_coeff) +
+    //                                imu_data.angular_vel_offset[0];
+    //      imu_data.angular_vel[1] = (((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.angular_vel_coeff) +
+    //                                imu_data.angular_vel_offset[1];
+    //      imu_data.angular_vel[2] = (((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.angular_vel_coeff) +
+    //                                imu_data.angular_vel_offset[2];
+    //      imu_data.time_stamp = frame_stamp.stamp;
+    //      int16_t temp = (int16_t)((frame.data[6] << 3) | (frame.data[7] >> 5));
+    //      if (temp > 1023)
+    //        temp -= 2048;
+    //      imu_data.temperature = temp * imu_data.temp_coeff + imu_data.temp_offset;
+    //      continue;
+    //    }
+    //    else if (data_ptr_.id2imu_data_->find(frame.can_id - 1) != data_ptr_.id2imu_data_->end())  // Check if IMU accel
+    //    {
+    //      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id - 1)->second;
+    //      imu_data.accel_updated = true;
+    //      imu_data.linear_acc[0] = ((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.accel_coeff;
+    //      imu_data.linear_acc[1] = ((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.accel_coeff;
+    //      imu_data.linear_acc[2] = ((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.accel_coeff;
+    //      imu_data.time_stamp = frame_stamp.stamp;
+    //      imu_data.camera_trigger = frame.data[6] & 1;
+    //      imu_data.enabled_trigger = frame.data[6] & 2;
+    //      imu_data.imu_filter->update(frame_stamp.stamp, imu_data.linear_acc, imu_data.angular_vel, imu_data.ori,
+    //                                  imu_data.linear_acc_cov, imu_data.angular_vel_cov, imu_data.ori_cov,
+    //                                  imu_data.temperature, imu_data.camera_trigger && imu_data.enabled_trigger);
+    //      continue;
+    //    }
+    //    else if (data_ptr_.id2tof_data_->find(frame.can_id) != data_ptr_.id2tof_data_->end())
+    //    {
+    //      TofData& tof_data = data_ptr_.id2tof_data_->find(frame.can_id)->second;
+    //      tof_data.distance = ((int16_t)((frame.data[1]) << 8) | frame.data[0]);
+    //      tof_data.strength = ((int16_t)((frame.data[3]) << 8) | frame.data[2]);
+    //      continue;
+    //    }
     if (frame.can_id != 0x0)
       ROS_ERROR_STREAM_ONCE("Can not find defined device, id: 0x" << std::hex << frame.can_id
                                                                   << " on bus: " << bus_name_);
