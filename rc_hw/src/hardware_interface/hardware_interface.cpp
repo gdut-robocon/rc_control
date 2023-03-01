@@ -176,7 +176,8 @@ void RcRobotHW::write(const ros::Time& time, const ros::Duration& period)
   // Gpio write
   gpio_manager_.writeGpio();
   publishActuatorState(time);
-  action_manager_.writeAction(time, period);
+  // @TODO because some reason? Action will stop output info when send cmd
+  //  action_manager_.writeAction(time, period);
 }
 
 void RcRobotHW::setCanBusThreadPriority(int thread_priority)
