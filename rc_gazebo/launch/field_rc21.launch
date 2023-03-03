@@ -22,7 +22,7 @@
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="paused" value="$(arg paused)"/>
-        <arg name="world_name" value="$(find rc_gazebo)/worlds/empty.world"/>
+        <arg name="world_name" value="$(find rc_gazebo)/worlds/rc_23.world"/>
     </include>
 
     <node

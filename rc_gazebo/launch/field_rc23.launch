@@ -1,0 +1,44 @@
+<launch>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [rabbit, elephant]"/>
+    <arg name="load_chassis" default="true"/>
+    <arg name="load_gimbal" default="false"/>
+    <arg name="load_shooter" default="true"/>
+    <arg name="load_arm" default="true"/>
+    <arg name="load_action" default="true"/>
+    <arg name="use_sim" default="true"/>
+    <arg name="use_simulation" default="true"/>
+    <arg name="roller_type" default="simple" doc="simple or realistic"/>
+    <arg name="x_pos" default="-11.6"/>
+    <arg name="y_pos" default="6.0"/>
+    <arg name="z_pos" default="0.5"/>
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
+
+    <rosparam file="$(find rc_gazebo)/config/actions.yaml" command="load" if="$(arg use_sim)"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro $(find rc_description)/urdf/$(arg robot_type)/$(arg robot_type).urdf.xacro 
+                                                load_chassis:=$(arg load_chassis) load_gimbal:=$(arg load_gimbal) load_shooter:=$(arg load_shooter) 
+                                                load_arm:=$(arg load_arm) use_sim:=$(arg use_sim) use_simulation:=$(arg use_simulation) 
+                                                roller_type:=$(arg roller_type) load_action:=$(arg load_action)"/>
+
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find rc_gazebo)/worlds/rc_23.world"/>
+        <arg name="debug" value="$(arg debug)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+    </include> 
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" clear_params="true"
+          args="-x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description -urdf -model $(arg robot_type)"
+          output="screen"/>
+
+    <!-- <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" args="-file $(find tt)/urdf/tt.urdf -urdf -model tt" output="screen"/> -->
+
+</launch>
