@@ -26,7 +26,7 @@ void IBus::init(const char* serial)
   int fd = open(serial, O_RDWR | O_NOCTTY | O_SYNC);
   if (fd == -1)
   {
-    ROS_ERROR("[rt_ibus] Unable to open ibus\n");
+    ROS_ERROR("[rc_ibus] Unable to open ibus. serial port: %s",serial);
     return;
   }
   struct termios options

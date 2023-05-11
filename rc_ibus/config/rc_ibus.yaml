@@ -1,3 +1,4 @@
-rc_ibus:
-  #  ls /dev/tty*
-  serial_port: "/dev/usbDbus"
+rc_hw:
+  rc_ibus:
+    #  ls /dev/tty*
+    serial_port: "/dev/usbDbus"

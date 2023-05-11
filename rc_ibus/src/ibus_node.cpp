@@ -6,7 +6,7 @@
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "rc_ibus");
-  IBusNode ibus_node;
+  rc_ibus::IBusNode ibus_node;
   ros::Rate loop_rate(1000);
   while (ros::ok())
   {
@@ -16,16 +16,18 @@ int main(int argc, char** argv)
   return 0;
 }
 
-IBusNode::IBusNode()
+namespace rc_ibus
 {
-  ibus_pub_ = nh_.advertise<rc_msgs::IbusData>("ibus_data", 1);
-  nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyUSB0");
-  ibus_.init(serial_port_.data());
-}
+    IBusNode::IBusNode() {
+        ibus_pub_ = nh_.advertise<rc_msgs::IbusData>("ibus_data", 1);
+        ros::NodeHandle nh_ibus("rc_hw/rc_ibus");
+        nh_ibus.param<std::string>("serial_port", serial_port_, "/dev/ttyUSB0");
+        ibus_.init(serial_port_.data());
+    }
 
-void IBusNode::run()
-{
-  ibus_.read();
-  ibus_.getData(&Ibus_cmd_);
-  ibus_pub_.publish(Ibus_cmd_);
+    void IBusNode::run() {
+        ibus_.read();
+        ibus_.getData(&Ibus_cmd_);
+        ibus_pub_.publish(Ibus_cmd_);
+    }
 }
