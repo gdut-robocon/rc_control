@@ -5,3 +5,7 @@ time stamp
 uint8 mode
 bool master
 float64 speed
+
+float64 push_vel
+float64 left_ring_vel
+float64 right_ring_vel
