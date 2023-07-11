@@ -87,27 +87,66 @@ void CanBus::write()
         has_write_frame1 = true;
       }
     }
-    else if (item.second.type.find("cheetah") != std::string::npos)
+    else if (item.second.type.find("DM_cheetah") != std::string::npos)
     {
       can_frame frame{};
       const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(item.second.type)->second;
+      //DM_Motor on
       frame.can_id = item.first;
       frame.can_dlc = 8;
+      DM_Cheetah::DM_Cheetah_control_cmd(frame,0X01);
+      socket_can_.write(&frame);
       uint16_t q_des = static_cast<int>(act_coeff.pos2act * (item.second.cmd_pos - act_coeff.act2pos_offset));
       uint16_t qd_des = static_cast<int>(act_coeff.vel2act * (item.second.cmd_vel - act_coeff.act2vel_offset));
       uint16_t kp = 0.;
-      uint16_t kd = 0.;
-      uint16_t tau = static_cast<int>(act_coeff.effort2act * (item.second.exe_effort - act_coeff.act2effort_offset));
-      // TODO(qiayuan) add position vel and effort hardware interface for MIT Cheetah Motor, now we using it as an effort joint.
-      frame.data[0] = q_des >> 8;
-      frame.data[1] = q_des & 0xFF;
-      frame.data[2] = qd_des >> 4;
-      frame.data[3] = ((qd_des & 0xF) << 4) | (kp >> 8);
-      frame.data[4] = kp & 0xFF;
-      frame.data[5] = kd >> 4;
-      frame.data[6] = ((kd & 0xF) << 4) | (tau >> 8);
-      frame.data[7] = tau & 0xff;
-      socket_can_.write(&frame);
+      uint16_t kd = 1.0;
+      uint16_t tau = static_cast<int>(act_coeff.effort2act *
+                                        (item.second.exe_effort - act_coeff.act2effort_offset));
+      //choose different mode
+      int id = frame.can_id;
+      //MIT_MODE ID
+      if(-1< id && id < 9) {
+          if (kd == 0)
+              ROS_WARN("In this mode, the value of kd cannot be set to 0, otherwise it will cause motor oscillation or even loss of control.");
+          frame.data[0] = q_des >> 8;
+          frame.data[1] = q_des & 0xFF;
+          frame.data[2] = qd_des >> 4;
+          frame.data[3] = ((qd_des & 0xF) << 4) | (kp >> 8);
+          frame.data[4] = kp & 0xFF;
+          frame.data[5] = kd >> 4;
+          frame.data[6] = ((kd & 0xF) << 4) | (tau >> 8);
+          frame.data[7] = tau & 0xff;
+          socket_can_.write(&frame);
+      }
+      //Speed Mode
+      else if (0X200-1 < id && id < 0X200+9)
+      {
+          uint8_t *vbuf;
+          vbuf = (uint8_t*)&qd_des;
+          frame.can_dlc=0X04;
+          frame.data[0]= *vbuf;
+          frame.data[1]= *(vbuf+1);
+          frame.data[2]= *(vbuf+2);
+          frame.data[3]= *(vbuf+3);
+          socket_can_.write(&frame);
+      }
+      //Position and Speed
+      else if (0X100-1 < id && id < 0X100+9)
+      {
+          uint8_t *vbuf;
+          uint8_t *pbuf;
+          vbuf = (uint8_t*)&qd_des;
+          pbuf = (uint8_t*)&q_des;
+          frame.data[0]=*pbuf;
+          frame.data[1]=*(pbuf+1);
+          frame.data[2]=*(pbuf+2);
+          frame.data[3]=*(pbuf+3);
+          frame.data[4]= *vbuf;
+          frame.data[5]= *(vbuf+1);
+          frame.data[6]= *(vbuf+2);
+          frame.data[7]= *(vbuf+3);
+          socket_can_.write(&frame);
+      }
     }
   }
 
@@ -271,6 +310,38 @@ void CanBus::frameCallback(const can_frame& frame)
   std::lock_guard<std::mutex> guard(mutex_);
   CanFrameStamp can_frame_stamp{ .frame = frame, .stamp = ros::Time::now() };
   read_buffer_.push_back(can_frame_stamp);
+}
+
+void DM_Cheetah::DM_Cheetah_control_cmd(can_frame &frame, uint8_t cmd)
+{
+    frame.data[0]=0XFF;
+    frame.data[1]=0XFF;
+    frame.data[2]=0XFF;
+    frame.data[3]=0XFF;
+    frame.data[4]=0XFF;
+    frame.data[5]=0XFF;
+    frame.data[6]=0XFF;
+
+/*
+      CMD_MOTOR_MODE=0X01;
+      CMD_RESET_MODE=0X02;
+      CMD_ZERO_POSITION=0X03;
+*/
+////TODO:(JIAlonglong)We can use the official provided upper computer to calibrate the zero point of the motor.
+
+    switch (cmd) {
+        case 0X01:
+            frame.data[7]=0XFC;
+            break;
+        case 0X02:
+            frame.data[7]=0XFD;
+            break;
+        case 0X03:
+            frame.data[7]=0XFE;
+            break;
+        default:
+            return;
+    }
 }
 
 }  // namespace rc_hw
