@@ -17,6 +17,9 @@ add_message_files(
         ActionData.msg
         ChassisCmd.msg
         IbusData.msg
+        GimbalCmd.msg
+        GimbalDesError.msg
+        ShooterCmd.msg
 )
 
 add_service_files(

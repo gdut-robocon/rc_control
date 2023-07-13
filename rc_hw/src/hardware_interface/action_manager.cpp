@@ -207,8 +207,8 @@ void ActionManager::unPack(const int id, const uint8_t data)
         action_data_values[id].yaw_angle = angToRad(data_trans_[id].f_data4[0]);
         action_data_values[id].pitch_angle = angToRad(data_trans_[id].f_data4[1]);
         action_data_values[id].roll_angle = angToRad(data_trans_[id].f_data4[2]);
-        action_data_values[id].pose_x = data_trans_[id].f_data4[3] / 1000.0;
-        action_data_values[id].pose_y = data_trans_[id].f_data4[4] / 1000.0;
+        action_data_values[id].pose_x = data_trans_[id].f_data4[4] / 1000.0;
+        action_data_values[id].pose_y = -1.0*data_trans_[id].f_data4[3] / 1000.0;
         action_data_values[id].yaw_acc = angToRad(data_trans_[id].f_data4[5]);
       }
       serial_flam_marks_[id] = START;
