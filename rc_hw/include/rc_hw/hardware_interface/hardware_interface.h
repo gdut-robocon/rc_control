@@ -32,6 +32,7 @@
 #include "can_bus.h"
 #include "gpio_manager.h"
 #include "action_manager.h"
+#include "DT35_laser.h"
 
 namespace rc_hw
 {
@@ -171,6 +172,7 @@ private:
   std::vector<CanBus*> can_buses_{};
   GpioManager gpio_manager_{};
   ActionManager action_manager_{};
+  DT35_laser dt35_laser_{};
 
   rc_control::ActionInterface action_interface_;
   rc_control::GpioStateInterface gpio_state_interface_;
