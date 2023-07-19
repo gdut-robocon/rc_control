@@ -519,6 +519,52 @@ bool RcRobotHW::parseActionData(XmlRpc::XmlRpcValue& action_datas, ros::NodeHand
   return true;
 }
 
+bool RcRobotHW::parseDT35Data(XmlRpc::XmlRpcValue &dt35_datas, ros::NodeHandle &robot_hw_nh)
+{
+    ROS_ASSERT(dt35_datas.getType() == XmlRpc::XmlRpcValue::TypeStruct);
+    try
+    {
+        for (auto it = dt35_datas.begin(); it != dt35_datas.end(); ++it)
+        {
+            if (!it->second.hasMember("serial_port"))
+            {
+                ROS_ERROR_STREAM("dt35 " << it->first << " has no associated serial_port.");
+                continue;
+            }
+            ROS_ASSERT(it->second.hasMember("serial_port"));
+            if (it->second.hasMember("serial_port"))
+            {
+                std::string serial_port = dt35_datas[it->first]["serial_port"];
+                if (!dt35_laser_.init(serial_port))
+                {
+                    return false;
+                }
+                rc_control::SharpIR sharp_data;
+                sharp_data = {  .name = it->first,
+                                .data = 0.0};
+                  dt35_laser_.dt35_data_values.push_back(sharp_data);
+                rc_control::SharpIRHandle sharp_handle(it->first, &dt35_laser_.dt35_data_values.back());
+
+                sharp_ir_interface_.registerHandle(sharp_handle);
+            }
+            else
+            {
+                ROS_ERROR_STREAM("Module " << it->first.data() << "hasn't set serial_port");
+            }
+        }
+        registerInterface(&sharp_ir_interface_);
+    }
+    catch (XmlRpc::XmlRpcException& e)
+    {
+        ROS_FATAL_STREAM("Exception raised by XmlRpc while reading the "
+                                 << "configuration: " << e.getMessage() << ".\n"
+                                 << "Please check the configuration, particularly parameter types.");
+        return false;
+    }
+    return true;
+
+}
+
 bool RcRobotHW::loadUrdf(ros::NodeHandle& root_nh)
 {
   if (urdf_model_ == nullptr)

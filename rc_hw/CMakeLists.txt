@@ -3,7 +3,7 @@ project(rc_hw)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
-
+set(CMAKE_BUILD_TYPE "Debug")
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
         COMPONENTS
