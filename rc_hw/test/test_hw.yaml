@@ -5,9 +5,9 @@ rc_hw:
   loop_frequency: 1000
   cycle_time_error_threshold: 0.001
   thread_priority: 95
-  actions:
-    location_action: # action names
-      serial_port: "/dev/ttyUSB0"
+#  actions:
+#    location_action: # action names
+#      serial_port: "/dev/ttyUSB0"
 
   # Configurations of the actuators
   #  actuators:
@@ -22,4 +22,7 @@ rc_hw:
 #      id: 0x201
 #      type: rm_3508
 #      lp_cutoff_frequency: 60
+  dt35laser:
+    moudle1:
+      serial_port: "/dev/ttyUSB0"
 

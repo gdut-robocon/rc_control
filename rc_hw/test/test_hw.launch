@@ -9,9 +9,8 @@
     <arg unless="$(arg debug)" name="launch_prefix" value=""/>
     <arg if="$(arg debug)" name="launch_prefix" value="gdbserver :1234"/>
 
-    <remap from="/data" to="/rm_hw/gimbal_imu/data"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro $(find rm_description)/urdf/$(arg robot_type)/$(arg robot_type).urdf.xacro
+    <param name="robot_description" command="$(find xacro)/xacro $(find rc_description)/urdf/$(arg robot_type)/$(arg robot_type).urdf.xacro
              load_chassis:=$(arg load_chassis) load_gimbal:=$(arg load_gimbal) load_shooter:=$(arg load_shooter)
              load_arm:=$(arg load_arm)
              use_simulation:=false roller_type:=none

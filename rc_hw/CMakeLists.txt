@@ -3,7 +3,7 @@ project(rc_hw)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
-
+set(CMAKE_BUILD_TYPE "Debug")
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
         COMPONENTS
@@ -76,7 +76,7 @@ add_executable(${PROJECT_NAME}
         src/hardware_interface/gpio_manager.cpp
         src/hardware_interface/action_manager.cpp
         src/control_loop.cpp
-        )
+        src/hardware_interface/DT35_laser.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}

@@ -73,6 +73,11 @@ bool RcRobotHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh)
   // CAN Bus
   if (!robot_hw_nh.getParam("bus", xml_rpc_value))
     ROS_WARN("No bus specified");
+  // DT35-laser
+  if (!robot_hw_nh.getParam("dt35laser", xml_rpc_value))
+      ROS_WARN("No dt35laser specified");
+  else if (!parseDT35Data(xml_rpc_value,robot_hw_nh))
+      return false;
   else if (xml_rpc_value.getType() == XmlRpc::XmlRpcValue::TypeArray)
   {
     ROS_ASSERT(xml_rpc_value[0].getType() == XmlRpc::XmlRpcValue::TypeString);
@@ -149,6 +154,8 @@ void RcRobotHW::read(const ros::Time& time, const ros::Duration& period)
   // Gpio read
   gpio_manager_.readGpio();
   action_manager_.readAction(time, period);
+  // DT35 read
+  dt35_laser_.readDT35_laser(time,period);
 }
 void RcRobotHW::write(const ros::Time& time, const ros::Duration& period)
 {

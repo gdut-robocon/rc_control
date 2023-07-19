@@ -27,11 +27,13 @@
 #include <rc_common/hardware_interface/gpio_interface.h>
 #include <rc_common/hardware_interface/rc_imu_sensor_interface.h>
 #include <rc_common/hardware_interface/robot_state_interface.h>
+#include <rc_common/hardware_interface/dt35_interface.h>
 #include <rc_msgs/ActuatorState.h>
 
 #include "can_bus.h"
 #include "gpio_manager.h"
 #include "action_manager.h"
+#include "DT35_laser.h"
 
 namespace rc_hw
 {
@@ -139,6 +141,17 @@ private:
    */
   bool parseActionData(XmlRpc::XmlRpcValue& action_datas, ros::NodeHandle& robot_hw_nh);
 
+    /** \brief Check whether somme params that are related to dt35 are set up and
+    * load these params.
+    *
+    * Check whether somme params that are related to dt35 are set up and load
+    * these params.
+    *
+    * @param dt35_datas Params you want to check and load
+    * @param robot_hw_nh A handle of a ROS node
+    * @return True if all params are set up.
+    */
+  bool parseDT35Data(XmlRpc::XmlRpcValue& dt35_datas, ros::NodeHandle& robot_hw_nh);
   /** \brief Load urdf of robot from param server.
    *
    * Load urdf of robot from param server.
@@ -171,8 +184,10 @@ private:
   std::vector<CanBus*> can_buses_{};
   GpioManager gpio_manager_{};
   ActionManager action_manager_{};
+  DT35_laser dt35_laser_{};
 
   rc_control::ActionInterface action_interface_;
+  rc_control::SharpIRInterface sharp_ir_interface_;
   rc_control::GpioStateInterface gpio_state_interface_;
   rc_control::GpioCommandInterface gpio_command_interface_;
   hardware_interface::ActuatorStateInterface act_state_interface_;

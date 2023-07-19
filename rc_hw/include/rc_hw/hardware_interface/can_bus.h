@@ -66,4 +66,11 @@ private:
   mutable std::mutex mutex_;
 };
 
+class DM_Cheetah{
+public:
+    static void DM_Cheetah_control_cmd(can_frame &frame, uint8_t cmd);
+private:
+    can::SocketCAN socket_can_;
+};
+
 }  // namespace rc_hw

@@ -87,27 +87,67 @@ void CanBus::write()
         has_write_frame1 = true;
       }
     }
-    else if (item.second.type.find("cheetah") != std::string::npos)
+    ////TODO:(JIAlonglong)we should change into vesc if possible.
+    else if (item.second.type.find("DM_cheetah") != std::string::npos)
     {
       can_frame frame{};
       const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(item.second.type)->second;
+      //DM_Motor on
       frame.can_id = item.first;
       frame.can_dlc = 8;
+      DM_Cheetah::DM_Cheetah_control_cmd(frame,0x01);
+      socket_can_.write(&frame);
       uint16_t q_des = static_cast<int>(act_coeff.pos2act * (item.second.cmd_pos - act_coeff.act2pos_offset));
       uint16_t qd_des = static_cast<int>(act_coeff.vel2act * (item.second.cmd_vel - act_coeff.act2vel_offset));
       uint16_t kp = 0.;
-      uint16_t kd = 0.;
-      uint16_t tau = static_cast<int>(act_coeff.effort2act * (item.second.exe_effort - act_coeff.act2effort_offset));
-      // TODO(qiayuan) add position vel and effort hardware interface for MIT Cheetah Motor, now we using it as an effort joint.
-      frame.data[0] = q_des >> 8;
-      frame.data[1] = q_des & 0xFF;
-      frame.data[2] = qd_des >> 4;
-      frame.data[3] = ((qd_des & 0xF) << 4) | (kp >> 8);
-      frame.data[4] = kp & 0xFF;
-      frame.data[5] = kd >> 4;
-      frame.data[6] = ((kd & 0xF) << 4) | (tau >> 8);
-      frame.data[7] = tau & 0xff;
-      socket_can_.write(&frame);
+      uint16_t kd = 1.0;
+      uint16_t tau = static_cast<int>(act_coeff.effort2act *
+                                        (item.second.exe_effort - act_coeff.act2effort_offset));
+      //choose different mode
+      int id = frame.can_id;
+      //MIT_MODE ID
+      if(-1< id && id < 9) {
+          if (kd == 0)
+              ROS_WARN("In this mode, the value of kd cannot be set to 0, otherwise it will cause motor oscillation or even loss of control.");
+          frame.data[0] = q_des >> 8;
+          frame.data[1] = q_des & 0xFF;
+          frame.data[2] = qd_des >> 4;
+          frame.data[3] = ((qd_des & 0xF) << 4) | (kp >> 8);
+          frame.data[4] = kp & 0xFF;
+          frame.data[5] = kd >> 4;
+          frame.data[6] = ((kd & 0xF) << 4) | (tau >> 8);
+          frame.data[7] = tau & 0xff;
+          socket_can_.write(&frame);
+      }
+      //Speed Mode
+      else if (0x200-1 < id && id < 0x200+9)
+      {
+          uint8_t *vbuf;
+          vbuf = (uint8_t*)&qd_des;
+          frame.can_dlc=0x04;
+          frame.data[0]= *vbuf;
+          frame.data[1]= *(vbuf+1);
+          frame.data[2]= *(vbuf+2);
+          frame.data[3]= *(vbuf+3);
+          socket_can_.write(&frame);
+      }
+      //Position and Speed
+      else if (0x100-1 < id && id < 0x100+9)
+      {
+          uint8_t *vbuf;
+          uint8_t *pbuf;
+          vbuf = (uint8_t*)&qd_des;
+          pbuf = (uint8_t*)&q_des;
+          frame.data[0]=*pbuf;
+          frame.data[1]=*(pbuf+1);
+          frame.data[2]=*(pbuf+2);
+          frame.data[3]=*(pbuf+3);
+          frame.data[4]= *vbuf;
+          frame.data[5]= *(vbuf+1);
+          frame.data[6]= *(vbuf+2);
+          frame.data[7]= *(vbuf+3);
+          socket_can_.write(&frame);
+      }
     }
   }
 
@@ -120,12 +160,6 @@ void CanBus::write()
 void CanBus::read(ros::Time time)
 {
   std::lock_guard<std::mutex> guard(mutex_);
-
-  for (auto& imu : *data_ptr_.id2imu_data_)
-  {
-    imu.second.gyro_updated = false;
-    imu.second.accel_updated = false;
-  }
 
   for (const auto& frame_stamp : read_buffer_)
   {
@@ -171,89 +205,50 @@ void CanBus::read(ros::Time time)
         continue;
       }
     }
-    // Check MIT Cheetah motor
-    //    else if (frame.can_id == static_cast<unsigned int>(0x000))
-    //    {
-    //      if (data_ptr_.id2act_data_->find(frame.data[0]) != data_ptr_.id2act_data_->end())
-    //      {
-    //        ActData& act_data = data_ptr_.id2act_data_->find(frame.data[0])->second;
-    //        const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(act_data.type)->second;
-    //        if (act_data.type.find("cheetah") != std::string::npos)
-    //        {  // MIT Cheetah Motor
-    //          act_data.q_raw = (frame.data[1] << 8) | frame.data[2];
-    //          uint16_t qd = (frame.data[3] << 4) | (frame.data[4] >> 4);
-    //          uint16_t cur = ((frame.data[4] & 0xF) << 8) | frame.data[5];
-    //          // Multiple cycle
-    //          // NOTE: The raw data range is -4pi~4pi
-    //          if (act_data.seq != 0)  // not the first receive
-    //          {
-    //            double pos_new = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
-    //                             static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
-    //            if (pos_new - act_data.pos > 4 * M_PI)
-    //              act_data.q_circle--;
-    //            else if (pos_new - act_data.pos < -4 * M_PI)
-    //              act_data.q_circle++;
-    //          }
-    //          try
-    //          {  // Duration will be out of dual 32-bit range while motor failure
-    //            act_data.frequency = 1. / (frame_stamp.stamp - act_data.stamp).toSec();
-    //          }
-    //          catch (std::runtime_error& ex)
-    //          {
-    //          }
-    //          act_data.stamp = frame_stamp.stamp;
-    //          act_data.seq++;
-    //          act_data.pos = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
-    //                         static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
-    //          // Converter raw CAN data to position velocity and effort.
-    //          act_data.vel = act_coeff.act2vel * static_cast<double>(qd) + act_coeff.act2vel_offset;
-    //          act_data.effort = act_coeff.act2effort * static_cast<double>(cur) + act_coeff.act2effort_offset;
-    //          // Low pass filter
-    //          act_data.lp_filter->input(act_data.vel);
-    //          act_data.vel = act_data.lp_filter->output();
-    //          continue;
-    //        }
-    //      }
-    //    }
-    //    else if (data_ptr_.id2imu_data_->find(frame.can_id) != data_ptr_.id2imu_data_->end())  // Check if IMU gyro
-    //    {
-    //      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id)->second;
-    //      imu_data.gyro_updated = true;
-    //      imu_data.angular_vel[0] = (((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.angular_vel_coeff) +
-    //                                imu_data.angular_vel_offset[0];
-    //      imu_data.angular_vel[1] = (((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.angular_vel_coeff) +
-    //                                imu_data.angular_vel_offset[1];
-    //      imu_data.angular_vel[2] = (((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.angular_vel_coeff) +
-    //                                imu_data.angular_vel_offset[2];
-    //      imu_data.time_stamp = frame_stamp.stamp;
-    //      int16_t temp = (int16_t)((frame.data[6] << 3) | (frame.data[7] >> 5));
-    //      if (temp > 1023)
-    //        temp -= 2048;
-    //      imu_data.temperature = temp * imu_data.temp_coeff + imu_data.temp_offset;
-    //      continue;
-    //    }
-    //    else if (data_ptr_.id2imu_data_->find(frame.can_id - 1) != data_ptr_.id2imu_data_->end())  // Check if IMU accel
-    //    {
-    //      ImuData& imu_data = data_ptr_.id2imu_data_->find(frame.can_id - 1)->second;
-    //      imu_data.accel_updated = true;
-    //      imu_data.linear_acc[0] = ((int16_t)((frame.data[1]) << 8) | frame.data[0]) * imu_data.accel_coeff;
-    //      imu_data.linear_acc[1] = ((int16_t)((frame.data[3]) << 8) | frame.data[2]) * imu_data.accel_coeff;
-    //      imu_data.linear_acc[2] = ((int16_t)((frame.data[5]) << 8) | frame.data[4]) * imu_data.accel_coeff;
-    //      imu_data.time_stamp = frame_stamp.stamp;
-    //      imu_data.camera_trigger = frame.data[6] & 1;
-    //      imu_data.enabled_trigger = frame.data[6] & 2;
-    //      imu_data.imu_filter->update(frame_stamp.stamp, imu_data.linear_acc, imu_data.angular_vel, imu_data.ori,
-    //                                  imu_data.linear_acc_cov, imu_data.angular_vel_cov, imu_data.ori_cov,
-    //                                  imu_data.temperature, imu_data.camera_trigger && imu_data.enabled_trigger);
-    //      continue;
-    //    }
-    //    else if (data_ptr_.id2tof_data_->find(frame.can_id) != data_ptr_.id2tof_data_->end())
-    //    {
-    //      TofData& tof_data = data_ptr_.id2tof_data_->find(frame.can_id)->second;
-    //      tof_data.distance = ((int16_t)((frame.data[1]) << 8) | frame.data[0]);
-    //      tof_data.strength = ((int16_t)((frame.data[3]) << 8) | frame.data[2]);
-    //      continue;
-    //    }
+    // Check DM_Cheetah motor
+        else if ((frame.can_id == 0x000) &&(frame.can_dlc==8))
+        {
+          if (data_ptr_.id2act_data_->find(frame.data[0]) != data_ptr_.id2act_data_->end())
+          {
+            ActData& act_data = data_ptr_.id2act_data_->find(frame.data[0])->second;
+            const ActCoeff& act_coeff = data_ptr_.type2act_coeffs_->find(act_data.type)->second;
+            if (act_data.type.find("DM_cheetah") != std::string::npos)
+            {  // DM_Cheetah Motor
+              act_data.q_raw = (frame.data[1] << 8) | frame.data[2];
+              uint16_t qd = (frame.data[3] << 4) | ((frame.data[4] & 0xF0) >> 4);
+              uint16_t cur = ((frame.data[4] & 0x0F) << 8) | frame.data[5];
+              // Multiple cycle
+              // NOTE: The raw data range is -4pi~4pi
+              if (act_data.seq != 0)  // not the first receive
+              {
+                double pos_new = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
+                                 static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
+                if (pos_new - act_data.pos > 4 * M_PI)
+                  act_data.q_circle--;
+                else if (pos_new - act_data.pos < -4 * M_PI)
+                  act_data.q_circle++;
+              }
+              try
+              {  // Duration will be out of dual 32-bit range while motor failure
+                act_data.frequency = 1. / (frame_stamp.stamp - act_data.stamp).toSec();
+              }
+              catch (std::runtime_error& ex)
+              {
+              }
+              act_data.stamp = frame_stamp.stamp;
+              act_data.seq++;
+              act_data.pos = act_coeff.act2pos * static_cast<double>(act_data.q_raw) + act_coeff.act2pos_offset +
+                             static_cast<double>(act_data.q_circle) * 8 * M_PI + act_data.offset;
+              // Converter raw CAN data to position velocity and effort.
+              act_data.vel = act_coeff.act2vel * static_cast<double>(qd) + act_coeff.act2vel_offset;
+              act_data.effort = act_coeff.act2effort * static_cast<double>(cur) + act_coeff.act2effort_offset;
+              // Low pass filter
+              act_data.lp_filter->input(act_data.vel);
+              act_data.vel = act_data.lp_filter->output();
+              continue;
+            }
+          }
+        }
     if (frame.can_id != 0x0)
       ROS_ERROR_STREAM_ONCE("Can not find defined device, id: 0x" << std::hex << frame.can_id
                                                                   << " on bus: " << bus_name_);
@@ -271,6 +266,38 @@ void CanBus::frameCallback(const can_frame& frame)
   std::lock_guard<std::mutex> guard(mutex_);
   CanFrameStamp can_frame_stamp{ .frame = frame, .stamp = ros::Time::now() };
   read_buffer_.push_back(can_frame_stamp);
+}
+
+void DM_Cheetah::DM_Cheetah_control_cmd(can_frame &frame, uint8_t cmd)
+{
+    frame.data[0]=0XFF;
+    frame.data[1]=0XFF;
+    frame.data[2]=0XFF;
+    frame.data[3]=0XFF;
+    frame.data[4]=0XFF;
+    frame.data[5]=0XFF;
+    frame.data[6]=0XFF;
+
+/*
+      CMD_MOTOR_MODE=0X01;
+      CMD_RESET_MODE=0X02;
+      CMD_ZERO_POSITION=0X03;
+*/
+////TODO:(JIAlonglong)We can use the official provided upper computer to calibrate the zero point of the motor.
+
+    switch (cmd) {
+        case 0X01:
+            frame.data[7]=0XFC;
+            break;
+        case 0X02:
+            frame.data[7]=0XFD;
+            break;
+        case 0X03:
+            frame.data[7]=0XFE;
+            break;
+        default:
+            return;
+    }
 }
 
 }  // namespace rc_hw
