@@ -207,6 +207,12 @@ Don't forget to give the project a star! Thanks again!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Top contributors:
+
+<a href="https://github.com/gdut-robocon/rc_control/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=gdut-robocon/rc_control" alt="contrib.rocks image" />
+</a>
+
 <!-- LICENSE -->
 
 ## 🎗 License
