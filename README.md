@@ -229,7 +229,7 @@ Project Link: [https://github.com/gdut-robocon/rc_control](https://github.com/gd
 <!-- REFERENCE LINKS -->
 
 [rc_control]: https://github.com/gdut-robocon/rc_control
-
+[rm_control]:https://github.com/rm-controls/rm_control
 <!-- MARKDOWN LINKS & IMAGES -->
 
 [contributors-shield]: https://img.shields.io/github/contributors/gdut-robocon/rc_control.svg?style=flat-round
@@ -251,6 +251,3 @@ Project Link: [https://github.com/gdut-robocon/rc_control](https://github.com/gd
 [Gazebo-url]: https://gazebosim.org/
 [C++-shield]: https://img.shields.io/badge/C++-00599C?style=flat-round&logo=cplusplus&logoColor=white
 [C++-url]: https://isocpp.org/
-
-## reference
-[rm_control]:https://github.com/rm-controls/rm_control
