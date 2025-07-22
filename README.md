@@ -226,7 +226,7 @@ Project Link: [https://github.com/gdut-robocon/rc_control](https://github.com/gd
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- REFERENCE LINKS -->
+## REFERENCE LINKS 
 
 [rc_control]: https://github.com/gdut-robocon/rc_control
 [rm_control](https://github.com/rm-controls/rm_control)
