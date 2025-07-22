@@ -229,7 +229,7 @@ Project Link: [https://github.com/gdut-robocon/rc_control](https://github.com/gd
 <!-- REFERENCE LINKS -->
 
 [rc_control]: https://github.com/gdut-robocon/rc_control
-[rm_control]:https://github.com/rm-controls/rm_control
+[rm_control](https://github.com/rm-controls/rm_control)
 <!-- MARKDOWN LINKS & IMAGES -->
 
 [contributors-shield]: https://img.shields.io/github/contributors/gdut-robocon/rc_control.svg?style=flat-round
